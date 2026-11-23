@@ -4,58 +4,52 @@
  * and guards against crashes when running inside Expo Go (which lacks custom native binaries).
  */
 
+import { NativeModules, TurboModuleRegistry } from 'react-native';
 import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { auth, isConfigured } from './firebase.native';
 
-// Check if running inside Expo Go (where custom native modules like RNGoogleSignin are not included)
-const isExpoGo =
-  Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
-  Constants.appOwnership === 'expo';
-
-let GoogleSigninModule = null;
-let statusCodes = {};
-let isModuleChecked = false;
-let isNativeModuleAvailable = false;
-
-function loadGoogleSignin() {
-  if (isModuleChecked) {
-    return isNativeModuleAvailable;
-  }
-  isModuleChecked = true;
-
-  if (isExpoGo) {
-    isNativeModuleAvailable = false;
-    return false;
+/**
+ * Checks whether RNGoogleSignin native module is registered in the native binary.
+ * TurboModuleRegistry.get() returns null safely without throwing invariant error.
+ */
+function isRNGoogleSigninAvailable() {
+  try {
+    if (TurboModuleRegistry && typeof TurboModuleRegistry.get === 'function') {
+      const module = TurboModuleRegistry.get('RNGoogleSignin');
+      if (module) return true;
+    }
+  } catch (e) {
+    // Ignore and fallback to NativeModules
   }
 
   try {
-    const mod = require('@react-native-google-signin/google-signin');
-    if (mod && mod.GoogleSignin) {
-      GoogleSigninModule = mod.GoogleSignin;
-      statusCodes = mod.statusCodes || {};
-      isNativeModuleAvailable = true;
+    if (NativeModules && NativeModules.RNGoogleSignin) {
       return true;
     }
-  } catch (err) {
-    // RNGoogleSignin TurboModule not found in the current native binary
-    isNativeModuleAvailable = false;
+  } catch (e) {
+    // Ignore
   }
-  return isNativeModuleAvailable;
+
+  return false;
 }
 
 let isGoogleSigninConfigured = false;
+let GoogleSigninModule = null;
+let statusCodes = {};
 
-function ensureGoogleSigninConfigured() {
-  const available = loadGoogleSignin();
-  if (!available || !GoogleSigninModule) {
+function getGoogleSignin() {
+  if (!isRNGoogleSigninAvailable()) {
     const error = new Error(
-      isExpoGo
-        ? 'Google Sign-In with native SDK requires a Development Build (npx expo run:android / eas build) because Expo Go does not bundle custom native modules. For Expo Go, please use "Sign In with Company Email" or test on Web.'
-        : 'Native Google Sign-In module (RNGoogleSignin) is not registered in this binary. Please rebuild using npx expo run:android or run:ios.'
+      'Google Sign-In with native SDK is not supported in Expo Go because custom native binaries are not bundled in Expo Go. Please use "Sign In with Company Email" to test in Expo Go, or test Google OAuth on Web at http://192.168.1.59:8081.'
     );
     error.code = 'auth/expo-go-unsupported';
     throw error;
+  }
+
+  if (!GoogleSigninModule) {
+    const mod = require('@react-native-google-signin/google-signin');
+    GoogleSigninModule = mod.GoogleSignin;
+    statusCodes = mod.statusCodes || {};
   }
 
   if (!isGoogleSigninConfigured) {
@@ -70,6 +64,8 @@ function ensureGoogleSigninConfigured() {
     });
     isGoogleSigninConfigured = true;
   }
+
+  return { GoogleSignin: GoogleSigninModule, statusCodes };
 }
 
 /**
@@ -83,12 +79,12 @@ export async function signInWithGoogle() {
     throw error;
   }
 
-  ensureGoogleSigninConfigured();
+  const { GoogleSignin, statusCodes } = getGoogleSignin();
 
   try {
-    await GoogleSigninModule.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-    const response = await GoogleSigninModule.signIn();
+    const response = await GoogleSignin.signIn();
     // Support both modern { data: { idToken } } and legacy { idToken } shapes
     const idToken = response?.data?.idToken || response?.idToken;
 
@@ -102,17 +98,17 @@ export async function signInWithGoogle() {
     const userCredential = await signInWithCredential(auth, credential);
     return userCredential;
   } catch (error) {
-    if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+    if (error.code === statusCodes?.SIGN_IN_CANCELLED) {
       const cancelError = new Error('Google Sign-In was cancelled.');
       cancelError.code = 'auth/cancelled';
       throw cancelError;
     }
-    if (error.code === statusCodes.IN_PROGRESS) {
+    if (error.code === statusCodes?.IN_PROGRESS) {
       const inProgressError = new Error('Sign-in is already in progress.');
       inProgressError.code = 'auth/in-progress';
       throw inProgressError;
     }
-    if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+    if (error.code === statusCodes?.PLAY_SERVICES_NOT_AVAILABLE) {
       const playServicesError = new Error('Google Play Services not available or outdated.');
       playServicesError.code = 'auth/play-services-unavailable';
       throw playServicesError;
@@ -125,16 +121,23 @@ export async function signInWithGoogle() {
  * Signs out the current user on Native (both Google Sign-In and Firebase Auth).
  */
 export async function signOutUser() {
-  if (loadGoogleSignin() && GoogleSigninModule) {
+  if (isRNGoogleSigninAvailable()) {
     try {
-      await GoogleSigninModule.signOut();
+      const mod = require('@react-native-google-signin/google-signin');
+      if (mod && mod.GoogleSignin) {
+        await mod.GoogleSignin.signOut();
+      }
     } catch (e) {
       // Non-fatal if already signed out
     }
   }
 
   if (auth) {
-    await firebaseSignOut(auth);
+    try {
+      await firebaseSignOut(auth);
+    } catch (e) {
+      // Non-fatal
+    }
   }
 }
 
