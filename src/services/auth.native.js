@@ -1,20 +1,68 @@
 /**
  * Native Authentication Service (Android & iOS)
- * Uses @react-native-google-signin/google-signin and Firebase signInWithCredential.
+ * Uses @react-native-google-signin/google-signin in development builds,
+ * and guards against crashes when running inside Expo Go (which lacks custom native binaries).
  */
 
 import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { auth, isConfigured } from './firebase.native';
+
+// Check if running inside Expo Go (where custom native modules like RNGoogleSignin are not included)
+const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient ||
+  Constants.appOwnership === 'expo';
+
+let GoogleSigninModule = null;
+let statusCodes = {};
+let isModuleChecked = false;
+let isNativeModuleAvailable = false;
+
+function loadGoogleSignin() {
+  if (isModuleChecked) {
+    return isNativeModuleAvailable;
+  }
+  isModuleChecked = true;
+
+  if (isExpoGo) {
+    isNativeModuleAvailable = false;
+    return false;
+  }
+
+  try {
+    const mod = require('@react-native-google-signin/google-signin');
+    if (mod && mod.GoogleSignin) {
+      GoogleSigninModule = mod.GoogleSignin;
+      statusCodes = mod.statusCodes || {};
+      isNativeModuleAvailable = true;
+      return true;
+    }
+  } catch (err) {
+    // RNGoogleSignin TurboModule not found in the current native binary
+    isNativeModuleAvailable = false;
+  }
+  return isNativeModuleAvailable;
+}
 
 let isGoogleSigninConfigured = false;
 
 function ensureGoogleSigninConfigured() {
+  const available = loadGoogleSignin();
+  if (!available || !GoogleSigninModule) {
+    const error = new Error(
+      isExpoGo
+        ? 'Google Sign-In with native SDK requires a Development Build (npx expo run:android / eas build) because Expo Go does not bundle custom native modules. For Expo Go, please use "Sign In with Company Email" or test on Web.'
+        : 'Native Google Sign-In module (RNGoogleSignin) is not registered in this binary. Please rebuild using npx expo run:android or run:ios.'
+    );
+    error.code = 'auth/expo-go-unsupported';
+    throw error;
+  }
+
   if (!isGoogleSigninConfigured) {
     const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
     const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '';
 
-    GoogleSignin.configure({
+    GoogleSigninModule.configure({
       webClientId: webClientId || undefined,
       iosClientId: iosClientId || undefined,
       hostedDomain: 'hbplus.fit', // Pre-fill / hint corporate domain
@@ -30,7 +78,7 @@ function ensureGoogleSigninConfigured() {
  */
 export async function signInWithGoogle() {
   if (!auth || !isConfigured) {
-    const error = new Error('Firebase Authentication is not configured on native.');
+    const error = new Error('Firebase Authentication is not configured on native. Please check your .env configuration.');
     error.code = 'auth/not-configured';
     throw error;
   }
@@ -38,9 +86,9 @@ export async function signInWithGoogle() {
   ensureGoogleSigninConfigured();
 
   try {
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    await GoogleSigninModule.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-    const response = await GoogleSignin.signIn();
+    const response = await GoogleSigninModule.signIn();
     // Support both modern { data: { idToken } } and legacy { idToken } shapes
     const idToken = response?.data?.idToken || response?.idToken;
 
@@ -77,10 +125,12 @@ export async function signInWithGoogle() {
  * Signs out the current user on Native (both Google Sign-In and Firebase Auth).
  */
 export async function signOutUser() {
-  try {
-    await GoogleSignin.signOut();
-  } catch (e) {
-    // Non-fatal if already signed out
+  if (loadGoogleSignin() && GoogleSigninModule) {
+    try {
+      await GoogleSigninModule.signOut();
+    } catch (e) {
+      // Non-fatal if already signed out
+    }
   }
 
   if (auth) {
