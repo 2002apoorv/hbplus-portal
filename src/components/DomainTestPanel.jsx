@@ -20,27 +20,11 @@ export default function DomainTestPanel({ onSelectScenario, loading }) {
       type: 'authorized',
     },
     {
-      label: 'Authorized Administrator',
-      email: 'sarah.admin@hbplus.fit',
-      name: 'Sarah Connor',
-      role: 'admin',
-      expected: 'Access Granted (Admin Dashboard)',
-      type: 'authorized',
-    },
-    {
       label: 'Unauthorized Public Email',
       email: 'john@gmail.com',
       name: 'John Outsider',
       role: 'user',
       expected: 'Access Denied (Access Restricted)',
-      type: 'denied',
-    },
-    {
-      label: 'Spoofed Lookalike Email',
-      email: 'hbplus.fit@gmail.com',
-      name: 'Lookalike Attacker',
-      role: 'user',
-      expected: 'Access Denied (Rejected)',
       type: 'denied',
     },
   ];
@@ -122,17 +106,18 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         cursor: 'pointer',
-        transition: 'all 0.1s ease-in-out',
+        transition: 'all 0.15s ease-in-out',
+        backdropFilter: 'blur(6px)',
       },
     }),
   },
   itemAuth: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
+    backgroundColor: 'rgba(240, 253, 244, 0.3)',
+    borderColor: 'rgba(187, 247, 208, 0.65)',
   },
   itemDenied: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
+    backgroundColor: 'rgba(254, 242, 242, 0.3)',
+    borderColor: 'rgba(254, 202, 202, 0.65)',
   },
   itemContent: {
     width: '100%',
