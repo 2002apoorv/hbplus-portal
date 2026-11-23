@@ -1,16 +1,21 @@
 /**
  * Login Screen - HBPLUS Employee Portal
- * Minimalist Enterprise SaaS Login with Responsive Design.
- * Centers a 420px card on desktop, full-width responsive on mobile.
+ * Minimalist Enterprise SaaS Login with Direct Email Authentication & Google Sign-In.
+ * Users can type their email directly:
+ * - If @hbplus.fit -> authenticated & enters dashboard.
+ * - If not @hbplus.fit -> displays not permitted (Access Denied).
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
+  TextInput,
+  TouchableOpacity,
   ScrollView, 
   StyleSheet, 
   Platform, 
+  ActivityIndicator,
   useWindowDimensions 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,8 +31,13 @@ export default function LoginScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
 
+  const [emailInput, setEmailInput] = useState('');
+  const [inputFocused, setInputFocused] = useState(false);
+  const [localError, setLocalError] = useState('');
+
   const {
     login,
+    authenticateWithEmail,
     authActionLoading,
     error,
     accessDenied,
@@ -36,6 +46,22 @@ export default function LoginScreen() {
     testDomainLogin,
     isFirebaseConfigured,
   } = useAuth();
+
+  const handleEmailSubmit = async () => {
+    const trimmed = emailInput.trim();
+    if (!trimmed) {
+      setLocalError('Please enter your email address.');
+      return;
+    }
+    setLocalError('');
+    await authenticateWithEmail(trimmed);
+  };
+
+  const handleTryAnother = () => {
+    clearError();
+    setEmailInput('');
+    setLocalError('');
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -58,11 +84,11 @@ export default function LoginScreen() {
             <Text style={styles.portalTag}>EMPLOYEE PORTAL</Text>
           </View>
 
-          {/* Conditional View: Access Denied State vs Welcome Back */}
+          {/* Conditional View: Access Denied State vs Sign-In Form */}
           {accessDenied ? (
             <AccessDeniedCard
-              unauthorizedEmail={unauthorizedEmail}
-              onTryAnother={clearError}
+              unauthorizedEmail={unauthorizedEmail || emailInput}
+              onTryAnother={handleTryAnother}
             />
           ) : (
             <View style={styles.formSection}>
@@ -74,12 +100,88 @@ export default function LoginScreen() {
               </View>
 
               {/* General Error Message */}
-              {error && !accessDenied && (
+              {(error || localError) && !accessDenied && (
                 <View style={styles.errorBanner}>
                   <Ionicons name="alert-circle" size={16} color={colors.danger} style={{ marginRight: 6 }} />
-                  <Text style={styles.errorText}>{error}</Text>
+                  <Text style={styles.errorText}>{localError || error}</Text>
                 </View>
               )}
+
+              {/* Direct Email Address Input Form */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Official Company Email</Text>
+                <View style={[
+                  styles.inputWrapper,
+                  inputFocused && styles.inputWrapperFocused,
+                  (localError || (error && !accessDenied)) && styles.inputWrapperError,
+                ]}>
+                  <Ionicons 
+                    name="mail-outline" 
+                    size={20} 
+                    color={inputFocused ? colors.accent : colors.textMuted} 
+                    style={styles.inputIcon} 
+                  />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder={`e.g. name${AUTHORIZED_DOMAIN_SUFFIX}`}
+                    placeholderTextColor={colors.textMuted}
+                    value={emailInput}
+                    onChangeText={(text) => {
+                      setEmailInput(text);
+                      if (localError) setLocalError('');
+                    }}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="go"
+                    onSubmitEditing={handleEmailSubmit}
+                    editable={!authActionLoading}
+                  />
+                  {emailInput.length > 0 && !authActionLoading && (
+                    <TouchableOpacity 
+                      onPress={() => setEmailInput('')} 
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={styles.clearIcon}
+                    >
+                      <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+
+              {/* Submit Email Button */}
+              <TouchableOpacity
+                style={[
+                  styles.emailSubmitButton,
+                  authActionLoading && styles.buttonDisabled,
+                ]}
+                onPress={handleEmailSubmit}
+                disabled={authActionLoading}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in with email"
+              >
+                {authActionLoading ? (
+                  <View style={styles.buttonContentRow}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={styles.emailSubmitTextLoading}>Verifying Authorization...</Text>
+                  </View>
+                ) : (
+                  <View style={styles.buttonContentRow}>
+                    <Text style={styles.emailSubmitText}>Sign In with Company Email</Text>
+                    <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Divider */}
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>OR SIGN IN WITH</Text>
+                <View style={styles.dividerLine} />
+              </View>
 
               {/* Google Sign-In Action */}
               <View style={styles.actionSection}>
@@ -100,9 +202,12 @@ export default function LoginScreen() {
             </View>
           )}
 
-          {/* Quick Scenario Evaluator (for one-click grading and rapid verification) */}
+          {/* Quick Scenario Evaluator (allows 1-click test or auto-fill) */}
           <DomainTestPanel
-            onSelectScenario={testDomainLogin}
+            onSelectScenario={(scenarioEmail) => {
+              setEmailInput(scenarioEmail);
+              authenticateWithEmail(scenarioEmail);
+            }}
             loading={authActionLoading}
           />
 
@@ -195,7 +300,7 @@ const styles = StyleSheet.create({
   },
   textCenter: {
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   heading: {
     fontSize: 22,
@@ -226,8 +331,115 @@ const styles = StyleSheet.create({
     color: colors.dangerText,
     fontWeight: '500',
   },
+  inputGroup: {
+    marginBottom: spacing.sm,
+    width: '100%',
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 6,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 12,
+    height: 48,
+    ...Platform.select({
+      web: {
+        transition: 'border-color 0.15s ease',
+      },
+    }),
+  },
+  inputWrapperFocused: {
+    borderColor: colors.accent,
+    backgroundColor: '#FFFFFF',
+  },
+  inputWrapperError: {
+    borderColor: colors.danger,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  textInput: {
+    flex: 1,
+    height: '100%',
+    color: colors.textPrimary,
+    fontSize: 15,
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+      },
+    }),
+  },
+  clearIcon: {
+    marginLeft: 6,
+  },
+  emailSubmitButton: {
+    backgroundColor: colors.primaryDark,
+    borderRadius: borderRadius.md,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xs,
+    width: '100%',
+    ...Platform.select({
+      web: {
+        cursor: 'pointer',
+        boxShadow: '0 2px 4px rgba(10, 25, 47, 0.15)',
+      },
+      default: {
+        elevation: 1,
+      },
+    }),
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+    ...Platform.select({
+      web: {
+        cursor: 'not-allowed',
+      },
+    }),
+  },
+  buttonContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emailSubmitText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  emailSubmitTextLoading: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    paddingHorizontal: 10,
+    letterSpacing: 0.5,
+  },
   actionSection: {
-    marginVertical: spacing.sm,
     width: '100%',
   },
   policyNotice: {

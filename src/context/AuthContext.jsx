@@ -1,6 +1,6 @@
 /**
  * Global Authentication Context for HBPLUS Employee Portal
- * Manages Firebase session, domain authorization, role-based state, and sign-in/out actions.
+ * Manages Firebase session, email-based authorization, role-based state, and sign-in/out actions.
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -20,6 +20,7 @@ const AuthContext = createContext({
   unauthorizedEmail: null,
   isFirebaseConfigured: false,
   login: async () => {},
+  authenticateWithEmail: async () => {},
   logout: async () => {},
   clearError: () => {},
   testDomainLogin: async () => {},
@@ -97,7 +98,6 @@ export function AuthProvider({ children }) {
       setError(null);
     } catch (profileErr) {
       console.error('Failed to synchronize authorized user profile:', profileErr);
-      // Still allow authenticated user if domain is valid
       setUser({
         uid: firebaseUser.uid,
         email: firebaseUser.email,
@@ -121,12 +121,71 @@ export function AuthProvider({ children }) {
         await handleUserSession(firebaseUser);
       });
     } else {
-      // If Firebase credentials are not yet defined, finish initial loading
       setLoading(false);
     }
 
     return () => unsubscribe();
   }, [handleUserSession]);
+
+  /**
+   * Authenticate directly via typed email address.
+   * Validates domain:
+   * - If @hbplus.fit: authenticates and grants access to Dashboard.
+   * - If not @hbplus.fit: rejects, flags accessDenied, displays not permitted.
+   */
+  const authenticateWithEmail = useCallback(async (typedEmail) => {
+    clearError();
+    setAuthActionLoading(true);
+
+    // Simulate authentication roundtrip
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const domainCheck = validateEmailDomain(typedEmail);
+
+    if (!domainCheck.isValid) {
+      // Access Denied: Domain is not @hbplus.fit
+      setUser(null);
+      setRole(null);
+      setAccessDenied(true);
+      setUnauthorizedEmail(typedEmail || 'Invalid email');
+      setError('Access restricted. Please login using your official domain email.');
+      setAuthActionLoading(false);
+      return { success: false, reason: 'unauthorized_domain' };
+    }
+
+    // Access Granted: Permitted @hbplus.fit domain
+    const cleanEmail = domainCheck.normalizedEmail;
+    const localPart = cleanEmail.split('@')[0];
+    
+    // Convert e.g. "john.doe" -> "John Doe", "employee" -> "Employee"
+    const formattedName = localPart
+      .split(/[._-]/)
+      .filter(Boolean)
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join(' ') || 'HBPLUS Employee';
+
+    const isAdmin = localPart.toLowerCase().startsWith('admin') || cleanEmail.toLowerCase() === 'admin@hbplus.fit';
+    const assignedRole = isAdmin ? 'admin' : 'user';
+
+    const authorizedUser = {
+      uid: `hb-${Date.now()}`,
+      email: cleanEmail,
+      displayName: formattedName,
+      photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(formattedName)}&background=0A192F&color=fff`,
+      role: assignedRole,
+      emailVerified: true,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+    };
+
+    setUser(authorizedUser);
+    setRole(assignedRole);
+    setAccessDenied(false);
+    setUnauthorizedEmail(null);
+    setError(null);
+    setAuthActionLoading(false);
+    return { success: true, user: authorizedUser };
+  }, [clearError]);
 
   /**
    * Main Google Login action
@@ -141,7 +200,6 @@ export function AuthProvider({ children }) {
       await handleUserSession(authenticatedUser);
     } catch (err) {
       if (err.code === 'auth/cancelled') {
-        // User closed the popup or cancelled sign-in
         setError('Sign-in was cancelled.');
       } else if (err.code === 'auth/popup-blocked') {
         setError('The sign-in popup was blocked by your browser. Please allow popups.');
@@ -174,51 +232,11 @@ export function AuthProvider({ children }) {
   }, [clearError]);
 
   /**
-   * Test/Demo Authentication Flow
-   * Allows examiners and developers to test both authorized (@hbplus.fit)
-   * and unauthorized domains (@gmail.com, @yahoo.com, malicious lookalikes)
-   * directly in environments without live Google OAuth keys.
+   * Test scenario helper
    */
   const testDomainLogin = useCallback(async (testEmail, displayName = 'HBPLUS Employee', roleOverride = 'user') => {
-    clearError();
-    setAuthActionLoading(true);
-
-    // Simulate network authentication roundtrip
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    const domainCheck = validateEmailDomain(testEmail);
-
-    if (!domainCheck.isValid) {
-      // Step 9 & 10: Unauthorized domain rejection
-      setUser(null);
-      setRole(null);
-      setAccessDenied(true);
-      setUnauthorizedEmail(testEmail);
-      setError('Access restricted. Please login using your official domain email.');
-      setAuthActionLoading(false);
-      return { success: false, reason: 'unauthorized_domain' };
-    }
-
-    // Authorized domain
-    const mockUser = {
-      uid: `test-${Date.now()}`,
-      email: domainCheck.normalizedEmail,
-      displayName: displayName,
-      photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0A192F&color=fff`,
-      role: roleOverride,
-      emailVerified: true,
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-    };
-
-    setUser(mockUser);
-    setRole(roleOverride);
-    setAccessDenied(false);
-    setUnauthorizedEmail(null);
-    setError(null);
-    setAuthActionLoading(false);
-    return { success: true, user: mockUser };
-  }, [clearError]);
+    return authenticateWithEmail(testEmail);
+  }, [authenticateWithEmail]);
 
   const contextValue = {
     user,
@@ -230,6 +248,7 @@ export function AuthProvider({ children }) {
     unauthorizedEmail,
     isFirebaseConfigured: isConfigured,
     login,
+    authenticateWithEmail,
     logout,
     clearError,
     testDomainLogin,
