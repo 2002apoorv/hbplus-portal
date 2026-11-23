@@ -3,6 +3,12 @@
 > **HBPLUS Employee Portal**  
 > A secure, modern, cross-platform authentication & authorization application built with React Native, Expo, and React Native Web.
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Netlify-00C7B7?style=for-the-badge&logo=netlify)](https://hbplusemploy.netlify.app)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/2002apoorv/hbplus-portal)
+
+- 🌐 **Live Web Deployment:** [https://hbplusemploy.netlify.app](https://hbplusemploy.netlify.app)
+- 📦 **GitHub Repository:** [https://github.com/2002apoorv/hbplus-portal](https://github.com/2002apoorv/hbplus-portal)
+
 ---
 
 ## 1. Project Overview
@@ -17,11 +23,11 @@ Any attempt to log in with unauthorized personal or external accounts (e.g., `@g
 
 | Email Account | Domain Check | Access Result | System Behavior |
 | :--- | :--- | :--- | :--- |
-| `john@hbplus.fit` | Match (`@hbplus.fit`) | **Access Granted** | Firestore profile synchronized $\rightarrow$ Navigates to Employee Dashboard |
+| `example@hbplus.fit` | Match (`@hbplus.fit`) | **Access Granted** | Firestore profile synchronized $\rightarrow$ Navigates to Employee Dashboard |
 | `employee@hbplus.fit` | Match (`@hbplus.fit`) | **Access Granted** | Firestore profile synchronized $\rightarrow$ Navigates to Employee Dashboard |
-| `sarah.admin@hbplus.fit` | Match (`@hbplus.fit`) | **Access Granted** | Admin role loaded $\rightarrow$ Navigates to Administrator Dashboard |
-| `john@gmail.com` | Non-company domain | **Access Denied** | Session revoked $\rightarrow$ Displays "Access restricted" card |
-| `john@yahoo.com` | Non-company domain | **Access Denied** | Session revoked $\rightarrow$ Displays "Access restricted" card |
+| `admin@hbplus.fit` | Match (`@hbplus.fit`) | **Access Granted** | Admin role loaded $\rightarrow$ Navigates to Administrator Dashboard |
+| `example@gmail.com` | Non-company domain | **Access Denied** | Session revoked $\rightarrow$ Displays *"Access restricted. Please login using your official domain email."* |
+| `john@yahoo.com` | Non-company domain | **Access Denied** | Session revoked $\rightarrow$ Displays *"Access restricted. Please login using your official domain email."* |
 | `hbplus.fit@gmail.com` | Lookalike in username | **Access Denied** | Malicious pattern blocked $\rightarrow$ Access restricted |
 | `john@hbplus.fit.example.com` | Subdomain spoof | **Access Denied** | Strict host matching blocked $\rightarrow$ Access restricted |
 
@@ -32,8 +38,8 @@ Any attempt to log in with unauthorized personal or external accounts (e.g., `@g
 - **One Single Codebase:** Shared React Native codebase running across Web browsers, Android, and iOS.
 - **Enterprise SaaS Aesthetic:** Navy Blue (`#0A192F`), Crisp White (`#FFFFFF`), and Subtle Slate Grey (`#F8FAFC`, `#E2E8F0`).
 - **Responsive Layout:**
-  - **Desktop Web:** Centered card ($\approx 420\text{px}$ width) with elevated shadows and restrained backdrop.
-  - **Mobile:** Full-width adaptive design with large tap targets and zero horizontal scrolling.
+  - **Desktop Web:** Centered card with elevated shadows and restrained backdrop.
+  - **Mobile:** Full-width adaptive design with large tap targets, fluid detail grids, and zero horizontal clipping across all viewport sizes.
 - **Protected Routing:** Powered by Expo Router with automatic session guards, preventing flickers during authentication recovery.
 
 ---
@@ -150,7 +156,7 @@ sequenceDiagram
         App-->>User: Navigate to Dashboard
     else Unauthorized domain (e.g. @gmail.com)
         App->>Firebase: signOut() (Revoke session immediately)
-        App-->>User: Display Access Restricted State
+        App-->>User: Display Access Restricted State ("Access restricted. Please login using your official domain email.")
     end
 ```
 
@@ -165,7 +171,7 @@ Document ID: Firebase `uid`
 {
   "uid": "X9kL3p001hbPlusUid",
   "name": "John Doe",
-  "email": "john@hbplus.fit",
+  "email": "example@hbplus.fit",
   "photoURL": "https://lh3.googleusercontent.com/...",
   "role": "user",
   "createdAt": "2026-11-23T09:00:00.000Z",
@@ -238,10 +244,10 @@ service cloud.firestore {
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/hbplus-auth.git
-cd hbplus-auth
+git clone https://github.com/2002apoorv/hbplus-portal.git
+cd hbplus-portal
 
-# Install dependencies (already resolved for SDK 58)
+# Install dependencies
 npm install
 ```
 
@@ -256,7 +262,7 @@ Populate your Firebase and Google Client IDs:
 - `EXPO_PUBLIC_FIREBASE_PROJECT_ID`
 - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
 
-*(Note: If environment variables are omitted, the application runs in Demo / Evaluator Mode with the interactive domain test panel ready for instant verification).*
+*(Note: If environment variables are omitted, the application runs in Evaluator Mode with the interactive domain test panel ready for instant verification).*
 
 ### Running the Application
 
@@ -306,15 +312,17 @@ npm run build:web
 npx netlify deploy --prod --dir=dist
 ```
 
+**Live URL:** [https://hbplusemploy.netlify.app](https://hbplusemploy.netlify.app)
+
 ---
 
 ## 10. Verification Matrix
 
 | Scenario | Input | Expected Output | Verification Status |
 | :--- | :--- | :--- | :--- |
-| **Authorized Domain** | `john@hbplus.fit` | Dashboard with Employee profile | Verified |
+| **Authorized Domain** | `example@hbplus.fit` | Dashboard with Employee profile | Verified |
 | **Case-Insensitive** | `ADMIN@HBPLUS.FIT` | Dashboard with Admin section | Verified |
-| **Unauthorized Gmail** | `john@gmail.com` | Access Restricted Card with "Try Another" | Verified |
+| **Unauthorized Gmail** | `example@gmail.com` | Access Restricted Card ("Access restricted...") | Verified |
 | **Spoofed Username** | `hbplus.fit@gmail.com` | Access Restricted Card | Verified |
 | **Subdomain Spoof** | `user@hbplus.fit.io` | Access Restricted Card | Verified |
 | **Malformed Address** | `user@@hbplus.fit` | Denied with validation error | Verified |
