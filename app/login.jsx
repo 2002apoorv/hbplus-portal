@@ -1,9 +1,8 @@
 /**
  * Login Screen - HBPLUS Employee Portal
  * Minimalist Enterprise SaaS Login with Direct Email Authentication & Google Sign-In.
- * Users can type their email directly:
- * - If @hbplus.fit -> authenticated & enters dashboard.
- * - If not @hbplus.fit -> displays not permitted (Access Denied).
+ * Users can type their email directly or click Continue with Google.
+ * Surfaces exact errors and domain restrictions.
  */
 
 import React, { useState } from 'react';
@@ -58,12 +57,8 @@ export default function LoginScreen() {
   };
 
   const handleGoogleClick = async () => {
-    const trimmed = emailInput.trim();
-    if (trimmed) {
-      await login(trimmed);
-    } else {
-      await login();
-    }
+    setLocalError('');
+    await login();
   };
 
   const handleTryAnother = () => {
@@ -108,10 +103,10 @@ export default function LoginScreen() {
                 </Text>
               </View>
 
-              {/* General Error Message */}
+              {/* General Error Message Banner */}
               {(error || localError) && !accessDenied && (
                 <View style={styles.errorBanner}>
-                  <Ionicons name="alert-circle" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+                  <Ionicons name="alert-circle" size={18} color={colors.danger} style={{ marginRight: 8, marginTop: 1 }} />
                   <Text style={styles.errorText}>{localError || error}</Text>
                 </View>
               )}
@@ -211,7 +206,7 @@ export default function LoginScreen() {
             </View>
           )}
 
-          {/* Quick Scenario Evaluator (allows 1-click test or auto-fill) */}
+          {/* Quick Scenario Evaluator */}
           <DomainTestPanel
             onSelectScenario={(scenarioEmail) => {
               setEmailInput(scenarioEmail);
@@ -225,11 +220,6 @@ export default function LoginScreen() {
             <Text style={styles.footerText}>
               HBPLUS Security & Identity Management • All rights reserved
             </Text>
-            {!isFirebaseConfigured && (
-              <Text style={styles.envNotice}>
-                Demo / Evaluator Mode Active (Firebase env unassigned)
-              </Text>
-            )}
           </View>
 
         </View>
@@ -326,12 +316,12 @@ const styles = StyleSheet.create({
   },
   errorBanner: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: colors.dangerBg,
     borderColor: colors.dangerBorder,
     borderWidth: 1,
     borderRadius: borderRadius.md,
-    padding: spacing.sm,
+    padding: spacing.md,
     marginBottom: spacing.md,
   },
   errorText: {
@@ -339,6 +329,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.dangerText,
     fontWeight: '500',
+    lineHeight: 18,
   },
   inputGroup: {
     marginBottom: spacing.sm,
@@ -477,13 +468,6 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 11,
     color: colors.textMuted,
-    textAlign: 'center',
-  },
-  envNotice: {
-    fontSize: 10,
-    color: colors.accent,
-    fontWeight: '600',
-    marginTop: 4,
     textAlign: 'center',
   },
 });

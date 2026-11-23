@@ -22,8 +22,8 @@ export const firebaseConfig = {
 
 export const isConfigured = Boolean(
   firebaseConfig.apiKey && 
-  firebaseConfig.projectId && 
-  firebaseConfig.apiKey !== 'your-firebase-api-key'
+  firebaseConfig.projectId &&
+  !firebaseConfig.apiKey.includes('ExampleApiKey')
 );
 
 let app = null;
@@ -42,8 +42,6 @@ if (isConfigured) {
   } catch (error) {
     console.error('Firebase web initialization error:', error);
   }
-} else {
-  console.info('HBPLUS: Firebase environment variables not fully configured. Running in ready/demo-compatible mode.');
 }
 
 export { app, auth, db };
