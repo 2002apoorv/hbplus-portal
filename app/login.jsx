@@ -241,7 +241,13 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFDF5',
+    ...Platform.select({
+      web: {
+        backgroundImage: 'radial-gradient(circle at 50% 18%, rgba(254, 240, 138, 0.45) 0%, rgba(254, 252, 232, 0.75) 45%, #FFFDF5 100%)',
+        backgroundAttachment: 'fixed',
+      },
+    }),
   },
   scrollContent: {
     flexGrow: 1,
@@ -293,7 +299,7 @@ const styles = StyleSheet.create({
   watermarkImage: {
     width: '100%',
     height: '100%',
-    opacity: 0.15,
+    opacity: 0.45,
   },
   brandHeader: {
     alignItems: 'center',
