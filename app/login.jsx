@@ -6,16 +6,17 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
+import {
+  View,
+  Text,
   TextInput,
   TouchableOpacity,
-  ScrollView, 
-  StyleSheet, 
-  Platform, 
+  ScrollView,
+  StyleSheet,
+  Platform,
   ActivityIndicator,
-  useWindowDimensions 
+  useWindowDimensions,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
@@ -69,7 +70,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
           isDesktop && styles.scrollContentDesktop,
@@ -78,7 +79,16 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.loginContainer, isDesktop ? styles.desktopCard : styles.mobileContainer]}>
-          
+
+          {/* Watermark Background Image */}
+          <View style={styles.watermarkWrapper} pointerEvents="none">
+            <Image
+              source={require('../assets/Watermark.jpg')}
+              style={styles.watermarkImage}
+              resizeMode="cover"
+            />
+          </View>
+
           {/* Brand Mark Header */}
           <View style={styles.brandHeader}>
             <View style={styles.logoBadge}>
@@ -119,11 +129,11 @@ export default function LoginScreen() {
                   inputFocused && styles.inputWrapperFocused,
                   (localError || (error && !accessDenied)) && styles.inputWrapperError,
                 ]}>
-                  <Ionicons 
-                    name="mail-outline" 
-                    size={20} 
-                    color={inputFocused ? colors.accent : colors.textMuted} 
-                    style={styles.inputIcon} 
+                  <Ionicons
+                    name="mail-outline"
+                    size={20}
+                    color={inputFocused ? colors.accent : colors.textMuted}
+                    style={styles.inputIcon}
                   />
                   <TextInput
                     style={styles.textInput}
@@ -144,8 +154,8 @@ export default function LoginScreen() {
                     editable={!authActionLoading}
                   />
                   {Boolean(emailInput.length > 0 && !authActionLoading) ? (
-                    <TouchableOpacity 
-                      onPress={() => setEmailInput('')} 
+                    <TouchableOpacity
+                      onPress={() => setEmailInput('')}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       style={styles.clearIcon}
                     >
@@ -252,6 +262,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.xl,
+    position: 'relative',
+    overflow: 'hidden',
     ...Platform.select({
       web: {
         boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04)',
@@ -261,16 +273,35 @@ const styles = StyleSheet.create({
   mobileContainer: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  watermarkWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 240,
+    overflow: 'hidden',
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    zIndex: 0,
+  },
+  watermarkImage: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.12,
   },
   brandHeader: {
     alignItems: 'center',
     marginBottom: spacing.lg,
+    zIndex: 1,
   },
   logoBadge: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#A6F037',
+    backgroundColor: '#3f63f6ff',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -296,6 +327,7 @@ const styles = StyleSheet.create({
   },
   formSection: {
     width: '100%',
+    zIndex: 1,
   },
   textCenter: {
     alignItems: 'center',
