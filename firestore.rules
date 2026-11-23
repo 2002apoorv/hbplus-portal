@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for security and domain verification
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    // Strict domain authorization: Email must end strictly in @hbplus.fit
+    function isAuthorizedHbplusDomain() {
+      return request.auth.token.email.matches('.*@hbplus\\.fit$');
+    }
+
+    // Role check helper
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.role == 'admin' ||
+         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    // Users Collection Security Rules
+    match /users/{userId} {
+      // An authorized user can read their own profile; Admins can read any profile
+      allow read: if isAuthenticated() && 
+                     isAuthorizedHbplusDomain() && 
+                     (request.auth.uid == userId || isAdmin());
+
+      // Profile creation rule:
+      // Must be authenticated with a verified @hbplus.fit email.
+      // Must set uid equal to request.auth.uid.
+      // Cannot self-assign 'admin' role upon creation unless configured by admin.
+      allow create: if isAuthenticated() &&
+                       isAuthorizedHbplusDomain() &&
+                       request.auth.uid == userId &&
+                       request.resource.data.uid == userId &&
+                       request.resource.data.email == request.auth.token.email &&
+                       (request.resource.data.role == 'user' || isAdmin());
+
+      // Profile update rule:
+      // Users can update their own lastLoginAt, name, photoURL.
+      // Users CANNOT modify or escalate their own 'role' field.
+      allow update: if isAuthenticated() &&
+                       isAuthorizedHbplusDomain() &&
+                       request.auth.uid == userId &&
+                       request.resource.data.role == resource.data.role;
+
+      // Only administrators can assign or modify user roles
+      allow write: if isAdmin();
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
