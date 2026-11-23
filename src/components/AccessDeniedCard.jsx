@@ -5,28 +5,33 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '../styles/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { AUTHORIZED_DOMAIN_SUFFIX } from '../utils/validateDomain';
 
 export default function AccessDeniedCard({ unauthorizedEmail, onTryAnother }) {
+  const { width } = useWindowDimensions();
+  const isSmall = width < 420;
+
   return (
-    <View style={styles.card}>
-      <View style={styles.iconCircle}>
-        <Ionicons name="shield-outline" size={32} color={colors.danger} />
+    <View style={[styles.card, isSmall && styles.cardCompact]}>
+      <View style={[styles.iconCircle, isSmall && styles.iconCircleCompact]}>
+        <Ionicons name="shield-outline" size={isSmall ? 26 : 32} color={colors.danger} />
       </View>
 
-      <Text style={styles.heading}>Access Restricted</Text>
+      <Text style={[styles.heading, isSmall && styles.headingSmall]}>Access Restricted</Text>
       
-      <Text style={styles.message}>
+      <Text style={[styles.message, isSmall && styles.messageSmall]}>
         Access restricted. Please login using your official domain email.
       </Text>
 
       {Boolean(unauthorizedEmail) ? (
         <View style={styles.attemptBox}>
           <Text style={styles.attemptLabel}>Attempted Account:</Text>
-          <Text style={styles.attemptEmail}>{unauthorizedEmail}</Text>
+          <Text style={[styles.attemptEmail, isSmall && styles.attemptEmailSmall]} numberOfLines={2}>
+            {unauthorizedEmail}
+          </Text>
           <View style={styles.deniedTag}>
             <Text style={styles.deniedTagText}>Unauthorized Domain</Text>
           </View>
@@ -72,6 +77,9 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  cardCompact: {
+    padding: spacing.md,
+  },
   iconCircle: {
     width: 60,
     height: 60,
@@ -81,6 +89,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
+  iconCircleCompact: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginBottom: spacing.sm,
+  },
   heading: {
     fontSize: 20,
     fontWeight: '700',
@@ -88,12 +102,20 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     textAlign: 'center',
   },
+  headingSmall: {
+    fontSize: 18,
+  },
   message: {
     fontSize: 15,
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing.md,
     lineHeight: 22,
+  },
+  messageSmall: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: spacing.sm,
   },
   attemptBox: {
     backgroundColor: colors.backgroundAlt,
@@ -117,6 +139,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
     marginVertical: 4,
+    textAlign: 'center',
+  },
+  attemptEmailSmall: {
+    fontSize: 13,
   },
   deniedTag: {
     backgroundColor: colors.dangerBg,
@@ -143,6 +169,7 @@ const styles = StyleSheet.create({
   infoIcon: {
     marginRight: 8,
     marginTop: 2,
+    flexShrink: 0,
   },
   infoText: {
     flex: 1,
@@ -161,7 +188,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryDark,
     borderRadius: borderRadius.md,
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     width: '100%',
     ...Platform.select({
       web: {

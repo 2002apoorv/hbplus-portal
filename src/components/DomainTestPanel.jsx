@@ -16,7 +16,6 @@ export default function DomainTestPanel({ onSelectScenario, loading }) {
       email: 'john@hbplus.fit',
       name: 'John Doe',
       role: 'user',
-      expected: 'Access Granted (Dashboard)',
       type: 'authorized',
     },
     {
@@ -24,7 +23,6 @@ export default function DomainTestPanel({ onSelectScenario, loading }) {
       email: 'john@gmail.com',
       name: 'John Outsider',
       role: 'user',
-      expected: 'Access Denied (Access Restricted)',
       type: 'denied',
     },
   ];
@@ -54,14 +52,10 @@ export default function DomainTestPanel({ onSelectScenario, loading }) {
               <View style={styles.itemContent}>
                 <View style={styles.topRow}>
                   <Text style={styles.itemLabel}>{item.label}</Text>
-                  <View style={[styles.badge, isAuth ? styles.badgeAuth : styles.badgeDenied]}>
-                    <Text style={[styles.badgeText, isAuth ? styles.badgeAuthText : styles.badgeDeniedText]}>
-                      {isAuth ? 'ALLOW' : 'BLOCK'}
-                    </Text>
-                  </View>
+
                 </View>
                 <Text style={styles.itemEmail}>{item.email}</Text>
-                <Text style={styles.itemExpected}>Result: {item.expected}</Text>
+
               </View>
             </TouchableOpacity>
           );
@@ -93,7 +87,7 @@ const styles = StyleSheet.create({
   },
   caption: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: "#222222f0",
     marginBottom: spacing.sm,
   },
   list: {
@@ -107,7 +101,7 @@ const styles = StyleSheet.create({
       web: {
         cursor: 'pointer',
         transition: 'all 0.15s ease-in-out',
-        backdropFilter: 'blur(6px)',
+        backdropFilter: 'blur(8px)',
       },
     }),
   },

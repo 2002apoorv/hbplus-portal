@@ -4,11 +4,15 @@
  */
 
 import React from 'react';
-import { View, Text, Image, StyleSheet, Platform } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '../styles/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfileCard({ user, role }) {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 540;
+  const isVerySmall = width < 380;
+
   if (!user) return null;
 
   const isAdmin = role === 'admin';
@@ -17,41 +21,45 @@ export default function ProfileCard({ user, role }) {
     : 'Active now';
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isVerySmall && styles.cardCompact]}>
       {/* Header with Avatar and Basic Info */}
       <View style={styles.userHeader}>
         <View style={styles.avatarWrapper}>
           {user.photoURL ? (
             <Image
               source={{ uri: user.photoURL }}
-              style={styles.avatar}
+              style={[styles.avatar, isNarrow && styles.avatarSmall]}
               accessibilityLabel={`${user.displayName || 'User'} profile avatar`}
             />
           ) : (
-            <View style={styles.avatarFallback}>
-              <Text style={styles.avatarInitial}>
+            <View style={[styles.avatarFallback, isNarrow && styles.avatarSmall]}>
+              <Text style={[styles.avatarInitial, isNarrow && styles.avatarInitialSmall]}>
                 {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
               </Text>
             </View>
           )}
-          <View style={styles.verifiedBadge}>
-            <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+          <View style={[styles.verifiedBadge, isNarrow && styles.verifiedBadgeSmall]}>
+            <Ionicons name="checkmark" size={isNarrow ? 10 : 12} color="#FFFFFF" />
           </View>
         </View>
 
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
-            <Text style={styles.displayName}>{user.displayName || 'HBPLUS Employee'}</Text>
+            <Text style={[styles.displayName, isNarrow && styles.displayNameSmall]}>
+              {user.displayName || 'HBPLUS Employee'}
+            </Text>
             <View style={[styles.roleTag, isAdmin ? styles.roleAdmin : styles.roleUser]}>
               <Text style={[styles.roleText, isAdmin ? styles.roleAdminText : styles.roleUserText]}>
                 {isAdmin ? 'Admin' : 'Employee'}
               </Text>
             </View>
           </View>
-          <Text style={styles.emailText}>{user.email}</Text>
+          <Text style={[styles.emailText, isNarrow && styles.emailTextSmall]} numberOfLines={1} ellipsizeMode="tail">
+            {user.email}
+          </Text>
           <View style={styles.statusRow}>
             <View style={styles.activeDot} />
-            <Text style={styles.statusText}>Authorized Session</Text>
+            <Text style={styles.statusText}>Authorized Corporate Session</Text>
           </View>
         </View>
       </View>
@@ -60,7 +68,7 @@ export default function ProfileCard({ user, role }) {
 
       {/* Security & Verification Details Grid */}
       <View style={styles.detailsGrid}>
-        <View style={styles.detailItem}>
+        <View style={[styles.detailItem, { width: isNarrow ? '100%' : '50%' }]}>
           <Text style={styles.detailLabel}>Email Domain</Text>
           <View style={styles.domainBadge}>
             <Ionicons name="shield-checkmark" size={14} color={colors.success} style={{ marginRight: 4 }} />
@@ -68,21 +76,26 @@ export default function ProfileCard({ user, role }) {
           </View>
         </View>
 
-        <View style={styles.detailItem}>
+        <View style={[styles.detailItem, { width: isNarrow ? '100%' : '50%' }]}>
           <Text style={styles.detailLabel}>Authentication Provider</Text>
           <View style={styles.providerBadge}>
             <Text style={styles.providerText}>Google OAuth 2.0</Text>
           </View>
         </View>
 
-        <View style={styles.detailItem}>
+        <View style={[styles.detailItem, { width: isNarrow ? '100%' : '50%' }]}>
           <Text style={styles.detailLabel}>Last Login</Text>
           <Text style={styles.detailValue}>{formattedLastLogin}</Text>
         </View>
 
-        <View style={styles.detailItem}>
+        <View style={[styles.detailItem, { width: isNarrow ? '100%' : '50%' }]}>
           <Text style={styles.detailLabel}>Account UID</Text>
-          <Text style={styles.uidText} numberOfLines={1} ellipsizeMode="middle">
+          <Text
+            style={styles.uidText}
+            numberOfLines={1}
+            ellipsizeMode="middle"
+            selectable={true}
+          >
             {user.uid}
           </Text>
         </View>
@@ -108,6 +121,10 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  cardCompact: {
+    padding: spacing.md,
+    marginVertical: spacing.sm,
+  },
   userHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -115,12 +132,18 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     position: 'relative',
     marginRight: spacing.md,
+    flexShrink: 0,
   },
   avatar: {
     width: 68,
     height: 68,
     borderRadius: 34,
     backgroundColor: colors.backgroundAlt,
+  },
+  avatarSmall: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
   },
   avatarFallback: {
     width: 68,
@@ -135,6 +158,9 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '700',
   },
+  avatarInitialSmall: {
+    fontSize: 20,
+  },
   verifiedBadge: {
     position: 'absolute',
     bottom: 0,
@@ -148,22 +174,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  verifiedBadgeSmall: {
+    width: 17,
+    height: 17,
+    borderRadius: 8.5,
+  },
   userInfo: {
     flex: 1,
+    minWidth: 0, // Enable text truncating/wrapping in flex
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   displayName: {
     fontSize: 19,
     fontWeight: '700',
     color: colors.textPrimary,
   },
+  displayNameSmall: {
+    fontSize: 16,
+  },
   roleTag: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: borderRadius.sm,
   },
@@ -174,7 +209,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentLight,
   },
   roleText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
@@ -189,15 +224,18 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  emailTextSmall: {
+    fontSize: 13,
+  },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 4,
   },
   activeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: colors.success,
     marginRight: 6,
   },
@@ -214,17 +252,15 @@ const styles = StyleSheet.create({
   detailsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -spacing.sm,
+    marginHorizontal: -spacing.xs,
+    rowGap: 12,
   },
   detailItem: {
-    width: '50%',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
   detailLabel: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
     color: colors.textMuted,
     marginBottom: 4,
     textTransform: 'uppercase',

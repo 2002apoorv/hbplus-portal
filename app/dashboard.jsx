@@ -29,6 +29,8 @@ export default function DashboardScreen() {
   const { user, role, loading, authActionLoading, logout } = useAuth();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
+  const isMobile = width < 600;
+  const isSmallMobile = width < 380;
 
   if (loading) {
     return <LoadingScreen message="Restoring session..." />;
@@ -54,6 +56,8 @@ export default function DashboardScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContainer,
+          isMobile && styles.scrollContainerMobile,
+          isSmallMobile && styles.scrollContainerSmallMobile,
           isDesktop && styles.scrollContainerDesktop,
         ]}
         showsVerticalScrollIndicator={false}
@@ -61,19 +65,21 @@ export default function DashboardScreen() {
         <View style={styles.contentWrapper}>
           
           {/* Welcome Banner */}
-          <View style={styles.welcomeBanner}>
-            <View style={styles.bannerTextContainer}>
-              <Text style={styles.welcomeSubtitle}>HBPLUS EMPLOYEE PORTAL</Text>
-              <Text style={styles.welcomeTitle}>
+          <View style={[styles.welcomeBanner, isMobile && styles.welcomeBannerMobile]}>
+            <View style={[styles.bannerTextContainer, isMobile && styles.bannerTextContainerMobile]}>
+              <Text style={[styles.welcomeSubtitle, isMobile && styles.welcomeSubtitleMobile]}>
+                HBPLUS EMPLOYEE PORTAL
+              </Text>
+              <Text style={[styles.welcomeTitle, isMobile && styles.welcomeTitleMobile]}>
                 Welcome back, {firstName}
               </Text>
-              <Text style={styles.welcomeDescription}>
+              <Text style={[styles.welcomeDescription, isMobile && styles.welcomeDescriptionMobile]}>
                 You are securely signed in using your corporate Google account ({user.email}).
               </Text>
             </View>
 
-            <View style={styles.domainConfirmedBadge}>
-              <Ionicons name="shield-checkmark" size={16} color={colors.success} style={{ marginRight: 6 }} />
+            <View style={[styles.domainConfirmedBadge, isMobile && styles.domainConfirmedBadgeMobile]}>
+              <Ionicons name="shield-checkmark" size={15} color={colors.success} style={{ marginRight: 6 }} />
               <Text style={styles.domainConfirmedText}>
                 {AUTHORIZED_DOMAIN_SUFFIX} Authorized
               </Text>
@@ -88,7 +94,7 @@ export default function DashboardScreen() {
             <AdminPanel />
           ) : (
             /* Regular Employee Information Card */
-            <View style={styles.employeeCard}>
+            <View style={[styles.employeeCard, isMobile && styles.employeeCardMobile]}>
               <View style={styles.cardHeader}>
                 <Ionicons name="briefcase-outline" size={18} color={colors.primaryLight} style={{ marginRight: 8 }} />
                 <Text style={styles.cardTitle}>Employee Workspace Access</Text>
@@ -146,6 +152,14 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     paddingBottom: spacing.xxl,
   },
+  scrollContainerMobile: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  scrollContainerSmallMobile: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
   scrollContainerDesktop: {
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
@@ -164,7 +178,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     flexWrap: 'wrap',
     gap: 16,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     ...Platform.select({
       web: {
         boxShadow: '0 4px 14px rgba(10, 25, 47, 0.15)',
@@ -174,9 +188,16 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  welcomeBannerMobile: {
+    padding: spacing.md,
+    gap: 12,
+  },
   bannerTextContainer: {
     flex: 1,
     minWidth: 260,
+  },
+  bannerTextContainerMobile: {
+    minWidth: '100%',
   },
   welcomeSubtitle: {
     color: colors.accent,
@@ -185,6 +206,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: 4,
   },
+  welcomeSubtitleMobile: {
+    fontSize: 10,
+  },
   welcomeTitle: {
     color: '#FFFFFF',
     fontSize: 24,
@@ -192,10 +216,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     marginBottom: 6,
   },
+  welcomeTitleMobile: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
   welcomeDescription: {
     color: '#94A3B8',
     fontSize: 14,
     lineHeight: 20,
+  },
+  welcomeDescriptionMobile: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   domainConfirmedBadge: {
     flexDirection: 'row',
@@ -206,6 +238,11 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     paddingVertical: 6,
     paddingHorizontal: 12,
+  },
+  domainConfirmedBadgeMobile: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
   },
   domainConfirmedText: {
     color: '#A7F3D0',
@@ -227,6 +264,10 @@ const styles = StyleSheet.create({
         ...shadows.sm,
       },
     }),
+  },
+  employeeCardMobile: {
+    padding: spacing.md,
+    marginVertical: spacing.sm,
   },
   cardHeader: {
     flexDirection: 'row',

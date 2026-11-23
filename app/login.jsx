@@ -30,6 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function LoginScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
+  const isSmallMobile = width < 380;
 
   const [emailInput, setEmailInput] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
@@ -73,12 +74,17 @@ export default function LoginScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
+          isSmallMobile && styles.scrollContentSmall,
           isDesktop && styles.scrollContentDesktop,
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.loginContainer, isDesktop ? styles.desktopCard : styles.mobileContainer]}>
+        <View style={[
+          styles.loginContainer,
+          isDesktop ? styles.desktopCard : styles.mobileContainer,
+          isSmallMobile && styles.mobileContainerSmall,
+        ]}>
 
           {/* WA Background Image for the Login Panel */}
           <View style={styles.watermarkWrapper} pointerEvents="none">
@@ -90,11 +96,11 @@ export default function LoginScreen() {
           </View>
 
           {/* Brand Mark Header */}
-          <View style={styles.brandHeader}>
-            <View style={styles.logoBadge}>
-              <Text style={styles.logoText}>HB+</Text>
+          <View style={[styles.brandHeader, isSmallMobile && styles.brandHeaderSmall]}>
+            <View style={[styles.logoBadge, isSmallMobile && styles.logoBadgeSmall]}>
+              <Text style={[styles.logoText, isSmallMobile && styles.logoTextSmall]}>HB+</Text>
             </View>
-            <Text style={styles.brandName}>HBPLUS</Text>
+            <Text style={[styles.brandName, isSmallMobile && styles.brandNameSmall]}>HBPLUS</Text>
             <Text style={styles.portalTag}>EMPLOYEE PORTAL</Text>
           </View>
 
@@ -107,7 +113,7 @@ export default function LoginScreen() {
           ) : (
             <View style={styles.formSection}>
               <View style={styles.textCenter}>
-                <Text style={styles.heading}>Welcome Back</Text>
+                <Text style={[styles.heading, isSmallMobile && styles.headingSmall]}>Welcome Back</Text>
                 <Text style={styles.subtitle}>
                   Sign in using your official company account.
                 </Text>
@@ -255,11 +261,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
   },
+  scrollContentSmall: {
+    padding: 10,
+  },
   scrollContentDesktop: {
     paddingVertical: spacing.xxl,
   },
   loginContainer: {
     width: '100%',
+    maxWidth: 440,
   },
   desktopCard: {
     maxWidth: 440,
@@ -286,6 +296,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  mobileContainerSmall: {
+    paddingHorizontal: 12,
+    paddingVertical: 18,
+    borderRadius: borderRadius.md,
+  },
   watermarkWrapper: {
     position: 'absolute',
     top: 0,
@@ -299,12 +314,15 @@ const styles = StyleSheet.create({
   watermarkImage: {
     width: '100%',
     height: '100%',
-    opacity: 0.45,
+    opacity: 0.75,
   },
   brandHeader: {
     alignItems: 'center',
     marginBottom: spacing.lg,
     zIndex: 1,
+  },
+  brandHeaderSmall: {
+    marginBottom: spacing.md,
   },
   logoBadge: {
     width: 48,
@@ -315,17 +333,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
+  logoBadgeSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    marginBottom: 6,
+  },
   logoText: {
     color: '#0A192F',
     fontSize: 20,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
+  logoTextSmall: {
+    fontSize: 16,
+  },
   brandName: {
     fontSize: 20,
     fontWeight: '800',
     color: colors.primaryDark,
     letterSpacing: 1.5,
+  },
+  brandNameSmall: {
+    fontSize: 18,
   },
   portalTag: {
     fontSize: 11,
@@ -348,6 +378,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 6,
     textAlign: 'center',
+  },
+  headingSmall: {
+    fontSize: 19,
   },
   subtitle: {
     fontSize: 14,
@@ -476,7 +509,7 @@ const styles = StyleSheet.create({
   dividerText: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.textMuted,
+    color: "#000000e3",
     paddingHorizontal: 10,
     letterSpacing: 0.5,
   },
@@ -495,7 +528,7 @@ const styles = StyleSheet.create({
   },
   policyText: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: "#222222f0",
   },
   policyHighlight: {
     fontWeight: '700',
