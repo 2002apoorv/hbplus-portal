@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoMark: {
-    backgroundColor: colors.primaryDark,
+    backgroundColor: '#A6F037',
     borderRadius: 8,
     width: 38,
     height: 38,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   logoText: {
-    color: '#FFFFFF',
+    color: '#0A192F',
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,
