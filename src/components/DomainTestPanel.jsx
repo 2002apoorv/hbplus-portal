@@ -13,14 +13,14 @@ export default function DomainTestPanel({ onSelectScenario, loading }) {
   const scenarios = [
     {
       label: 'Authorized Employee',
-      email: 'john@hbplus.fit',
+      email: 'example@hbplus.fit',
       name: 'John Doe',
       role: 'user',
       type: 'authorized',
     },
     {
       label: 'Unauthorized Public Email',
-      email: 'john@gmail.com',
+      email: 'example@gmail.com',
       name: 'John Outsider',
       role: 'user',
       type: 'denied',
