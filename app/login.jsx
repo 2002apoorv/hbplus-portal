@@ -50,11 +50,20 @@ export default function LoginScreen() {
   const handleEmailSubmit = async () => {
     const trimmed = emailInput.trim();
     if (!trimmed) {
-      setLocalError('Please enter your email address.');
+      setLocalError('Please type your company email address.');
       return;
     }
     setLocalError('');
     await authenticateWithEmail(trimmed);
+  };
+
+  const handleGoogleClick = async () => {
+    const trimmed = emailInput.trim();
+    if (trimmed) {
+      await login(trimmed);
+    } else {
+      await login();
+    }
   };
 
   const handleTryAnother = () => {
@@ -186,7 +195,7 @@ export default function LoginScreen() {
               {/* Google Sign-In Action */}
               <View style={styles.actionSection}>
                 <GoogleLoginButton
-                  onPress={login}
+                  onPress={handleGoogleClick}
                   loading={authActionLoading}
                   disabled={authActionLoading}
                 />

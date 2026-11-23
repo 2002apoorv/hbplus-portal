@@ -138,7 +138,7 @@ export function AuthProvider({ children }) {
     setAuthActionLoading(true);
 
     // Simulate authentication roundtrip
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
     const domainCheck = validateEmailDomain(typedEmail);
 
@@ -188,30 +188,38 @@ export function AuthProvider({ children }) {
   }, [clearError]);
 
   /**
-   * Main Google Login action
+   * Main Google Login action.
+   * If real Firebase keys are configured, launches Google popup.
+   * If Firebase keys are not yet configured in .env, prompts or simulates Google OAuth with an @hbplus.fit account.
    */
-  const login = useCallback(async () => {
+  const login = useCallback(async (optionalEmail = null) => {
     clearError();
     setAuthActionLoading(true);
 
-    try {
-      const userCredential = await doGoogleSignIn();
-      const authenticatedUser = userCredential.user;
-      await handleUserSession(authenticatedUser);
-    } catch (err) {
-      if (err.code === 'auth/cancelled') {
-        setError('Sign-in was cancelled.');
-      } else if (err.code === 'auth/popup-blocked') {
-        setError('The sign-in popup was blocked by your browser. Please allow popups.');
-      } else if (err.code === 'auth/not-configured') {
-        setError(err.message);
-      } else {
-        setError(err.message || 'An unexpected error occurred during Google authentication.');
+    // If Firebase is configured with real credentials in .env, perform live Google OAuth
+    if (isConfigured && auth) {
+      try {
+        const userCredential = await doGoogleSignIn();
+        const authenticatedUser = userCredential.user;
+        await handleUserSession(authenticatedUser);
+      } catch (err) {
+        if (err.code === 'auth/cancelled') {
+          setError('Sign-in was cancelled.');
+        } else if (err.code === 'auth/popup-blocked') {
+          setError('The sign-in popup was blocked by your browser. Please allow popups.');
+        } else {
+          setError(err.message || 'An unexpected error occurred during Google authentication.');
+        }
+      } finally {
+        setAuthActionLoading(false);
       }
-    } finally {
-      setAuthActionLoading(false);
+      return;
     }
-  }, [clearError, handleUserSession]);
+
+    // In demo / unconfigured mode: simulate Google OAuth sign-in
+    const targetEmail = optionalEmail || 'john@hbplus.fit';
+    await authenticateWithEmail(targetEmail);
+  }, [clearError, handleUserSession, authenticateWithEmail]);
 
   /**
    * Main Logout action
@@ -234,7 +242,7 @@ export function AuthProvider({ children }) {
   /**
    * Test scenario helper
    */
-  const testDomainLogin = useCallback(async (testEmail, displayName = 'HBPLUS Employee', roleOverride = 'user') => {
+  const testDomainLogin = useCallback(async (testEmail) => {
     return authenticateWithEmail(testEmail);
   }, [authenticateWithEmail]);
 
