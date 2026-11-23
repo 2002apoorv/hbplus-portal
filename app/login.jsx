@@ -80,10 +80,10 @@ export default function LoginScreen() {
       >
         <View style={[styles.loginContainer, isDesktop ? styles.desktopCard : styles.mobileContainer]}>
 
-          {/* Watermark Background Image */}
+          {/* WA Background Image for the Login Panel */}
           <View style={styles.watermarkWrapper} pointerEvents="none">
             <Image
-              source={require('../assets/Watermark.jpg')}
+              source={require('../assets/WA.jpg')}
               style={styles.watermarkImage}
               resizeMode="cover"
             />
@@ -271,26 +271,29 @@ const styles = StyleSheet.create({
     }),
   },
   mobileContainer: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
     position: 'relative',
     overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   watermarkWrapper: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 240,
+    bottom: 0,
     overflow: 'hidden',
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
+    borderRadius: borderRadius.lg,
     zIndex: 0,
   },
   watermarkImage: {
     width: '100%',
     height: '100%',
-    opacity: 0.12,
+    opacity: 0.15,
   },
   brandHeader: {
     alignItems: 'center',
