@@ -23,7 +23,7 @@ export default function AccessDeniedCard({ unauthorizedEmail, onTryAnother }) {
         Access restricted. Please login using your official domain email.
       </Text>
 
-      {unauthorizedEmail && (
+      {Boolean(unauthorizedEmail) ? (
         <View style={styles.attemptBox}>
           <Text style={styles.attemptLabel}>Attempted Account:</Text>
           <Text style={styles.attemptEmail}>{unauthorizedEmail}</Text>
@@ -31,7 +31,7 @@ export default function AccessDeniedCard({ unauthorizedEmail, onTryAnother }) {
             <Text style={styles.deniedTagText}>Unauthorized Domain</Text>
           </View>
         </View>
-      )}
+      ) : null}
 
       <View style={styles.infoBox}>
         <Ionicons name="information-circle-outline" size={16} color={colors.infoText} style={styles.infoIcon} />

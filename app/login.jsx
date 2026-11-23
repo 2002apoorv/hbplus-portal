@@ -104,12 +104,12 @@ export default function LoginScreen() {
               </View>
 
               {/* General Error Message Banner */}
-              {(error || localError) && !accessDenied && (
+              {Boolean((error || localError) && !accessDenied) ? (
                 <View style={styles.errorBanner}>
                   <Ionicons name="alert-circle" size={18} color={colors.danger} style={{ marginRight: 8, marginTop: 1 }} />
                   <Text style={styles.errorText}>{localError || error}</Text>
                 </View>
-              )}
+              ) : null}
 
               {/* Direct Email Address Input Form */}
               <View style={styles.inputGroup}>
@@ -143,7 +143,7 @@ export default function LoginScreen() {
                     onSubmitEditing={handleEmailSubmit}
                     editable={!authActionLoading}
                   />
-                  {emailInput.length > 0 && !authActionLoading && (
+                  {Boolean(emailInput.length > 0 && !authActionLoading) ? (
                     <TouchableOpacity 
                       onPress={() => setEmailInput('')} 
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -151,7 +151,7 @@ export default function LoginScreen() {
                     >
                       <Ionicons name="close-circle" size={18} color={colors.textMuted} />
                     </TouchableOpacity>
-                  )}
+                  ) : null}
                 </View>
               </View>
 
